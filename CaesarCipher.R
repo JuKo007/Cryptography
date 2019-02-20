@@ -15,7 +15,7 @@ CaesarCipher <- function(string, shift = 1, shuffle = FALSE, seed = 123){
   # preventing factorization
   options(stringsAsFactors = FALSE)
   
-  # taking care of shifts that are bigger than 26 or smaller than -26
+  # taking care of shifts that are bigger than 71 or smaller than -71
   shift <- shift%%71
   
   # defining a dictionary for mapping characters to numbers
@@ -45,7 +45,7 @@ CaesarCipher <- function(string, shift = 1, shuffle = FALSE, seed = 123){
   Shifter <- function(x){x <- sapply(x,function(y){as.numeric(y)+shift});return(x)}
   ShiftedNumeralizedLetters <- lapply(NumeraliszedLetters,Shifter)
   
-  # Through the shift, we might get values larger than 26 or smaller than 0, we need to account for that to map them back to letters
+  # Through the shift, we might get values larger than 71 or smaller than 0, we need to account for that to map them back to letters
   ImitatingPositiveModularity <- function(x){x[as.numeric(x) > 71] <- (as.numeric(x[as.numeric(x) > 71]) - 71); return(x)}
   ImitatingNegativeModularity <- function(x){x[as.numeric(x) < 1] <- (as.numeric(x[as.numeric(x) < 1]) + 71); return(x)}
   ModularizedShiftedNumeralizedLetters <- lapply(ShiftedNumeralizedLetters,ImitatingPositiveModularity)

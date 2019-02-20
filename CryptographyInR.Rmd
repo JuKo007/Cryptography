@@ -1,0 +1,165 @@
+---
+title: "Cryptography in R"
+output: html_notebook
+---
+
+In this R notebook, I will go through several methods for encrypting and decrypting text strings and implement them in the R programming language. The content of the notebook is largely inspired by the ["The Code Book"](https://simonsingh.net/books/the-code-book/) by Simon Singh, which I highly recommend if you are interested in the topic of cryptography. As such, the methods are approximately ordered from older methods to newer methods. Additional materials and information are taken from [Wikipedia](http://www.wikipedia.org).
+
+**Disclaimer**: The custom written functions used in this notebook are neither tested for security nor for usability in other contexts (e.g. different encodings, other alphabets etc.). They are only for showcasing the methods of encryption/decryption. Feel free to use them if they work for you but I can't guarantee anything.
+
+# Scytale / Rail-fence Cipher
+
+The first method we want to have a look at is the [scytale](https://en.wikipedia.org/wiki/Scytale). In this old method for encrypting texts, you would roll a strip of parchment or leather around a stick and then write your message across it. After unrolling it, you would have a strip with letters from the original message that don't make any sense because the message was written from left to right and not from top to bottom. Only when someone knows the diameter of the stick that was used to write the message they could decrypt the message by wrapping the strip around a stick of the same diameter and reading the message from left to right again. Using a stick with a wrong diameter would result in wrong letters lining up and the message could not be deciphered. This method of encryption and decryption was used already in ancient Greece for secure communication within the military. ![This is what a Scytale looks like](https://upload.wikimedia.org/wikipedia/commons/5/51/Skytale.png)
+
+The scytale is very similar to the [rail-fence or ZigZag cipher](https://en.wikipedia.org/wiki/Rail_fence_cipher). In this cipher, you take a message and break it up across multiple lines and then combine the lines to shuffle the order of letters in the original message. For example, the text *I REALLY LIKE PUZZLES*, split across three different lines would look like this: 
+
+I . . . . A . . . . . \_ . . . . . . E . . . . . Z . . . . . . . S
+
+. \_ . E . . L . .  Y . . L . . K . . \_ . . U . . Z . . . E . . 
+
+. . R . . . . . L . . . . . I . . . . . . P . . . . . . L . . . .
+
+and when recombined (read line by line), would result in the ciphertext *IA EZS ELYLK UZERLIPL*. This is similar to a scytale with a circumfrence equivalent to 4 times the size of a letter because in both cases, the 1st and 4th, 2nd and 5th, 3rd and 6th etc. line up.
+
+
+## Building the Scytale Function
+
+We can build a function that encrypts and decrypts text strings just like a scytale/rail fence cipher by spliting the string into individual characters and then putting them into a matrix. First of all, lets create a test string
+
+```{r}
+string <- c("I really really like puzzles")
+cat(string)
+```
+
+then, we need to decide on the number lines that we want to split our text to (kind of like the circumcerence of the scytale). For our example, lets say we take 3 lines.
+
+```{r}
+rows <- 3
+cat(rows)
+```
+
+### Encryption
+
+Next, we need to split our message into individual characters
+
+```{r}
+Split <- unlist(strsplit(tolower(string),""))
+cat(Split)
+```
+
+and check how many individual characters we have in our message
+
+```{r}
+SplitLength <- length(Split)
+cat(SplitLength)
+```
+
+with this information, we can now compute how many columns our matrix would minimally need to fit a message with `r SplitLength` characters
+
+```{r}
+MatCols <- ceiling(SplitLength/rows)
+cat(MatCols)
+```
+
+As we can see however, if we initialize a matrix with `r rows` rows and `r MatCols` columns, we will have `r rows*MatCols` cells in the matrix but only `r SplitLength` characters to fill them. We thus need to append the vector of characters with `r rows*MatCols - SplitLength` `r NA` values.
+
+```{r}
+length(Split) <- rows*MatCols
+cat(Split)
+```
+
+Now that we have enough elements in the vector, we can put the string into the matrix
+
+```{r}
+Mat <- matrix(Split, nrow = rows, ncol = MatCols, byrow = FALSE)
+Mat
+```
+
+Note that wen can still read the original message if we read the matrix column by column but we can't if we read it row by row. Reading it row by row results in the encrypted message. In a next step, we can transpose the matrix
+
+```{r}
+Mat <- t(Mat)
+Mat
+```
+
+We now reversed the readibiltiy. Readin the matrix row by row displays the original message while reading it column by column will result in the encrypted message. Lets print the encrypted message by printing the matrix column by column while ignoring the NA values
+
+```{r}
+OutMsg <- paste0(as.vector(Mat[!is.na(Mat)]),collapse="")
+cat(OutMsg)
+```
+
+We can now encrypt text messages with the scytale method / rail-fence cipher! Nice!
+
+### Decryption
+
+Now we also need a way of decrypting the message again. In principle, we could just split the message into characters again, put into a matrix of the same dimensions and then read the message row-wise instead of column-wise. Lets split the encrypted message
+
+```{r}
+Split2 <- unlist(strsplit(tolower(OutMsg),""))
+cat(Split2)
+```
+
+There is a problem however when we are forced to introduce NA values into the matrix during encryption. Because we print the decrypted message while ignoring the NA values, we would mess up the delicate order of character if we don reintroduce them again. Luckily, if we know the number of lines and the number of characters in the message, we can compute their position and reintroduce them! First, we compute how many NA values where introduced
+
+```{r}
+NumberOfNAs <- (rows*MatCols) - SplitLength
+cat(NumberOfNAs)
+```
+
+Now we can compute which columns are containing NA values because it will always be the last values at the end of the message
+
+```{r}
+ColumnsWithNAs <- tail(c(1:rows),NumberOfNAs)
+ColumnsWithNAs
+```
+
+from this, we can compute the position of NA values within the text string that we want to decrypt
+
+```{r}
+NAPositionsInString <- ColumnsWithNAs * MatCols
+NAPositionsInString
+```
+
+To make things easier, we will use the insert function from the Rutils package
+
+```{r echo = FALSE}
+if("R.utils" %in% installed.packages() == FALSE) {
+  install.packages("R.utils")
+}
+library(R.utils)
+```
+
+to use a for loop to put the NA values into the right positions again
+
+```{r}
+for(i in 1:NumberOfNAs){
+        
+  Split2 <- insert(Split2,NAPositionsInString[i],NA)
+  
+}
+
+cat(Split2)
+```
+
+```{r}
+DecMat <- matrix(Split2, nrow = rows, ncol = MatCols, byrow = TRUE)
+DecMat
+```
+
+Now that we have the correct matrix again, we can simply print it column by column while ignoring the NA values to get the original message
+
+```{r}
+DecLet <- as.vector(DecMat[!is.na(DecMat)])
+DecMsg <- paste0(DecLet,collapse="")
+cat(DecMsg)
+```
+
+Nice!
+
+To automate this process, theres a function included in this repository, lets load it!
+
+```{r}
+source("scytale.R")
+```
+

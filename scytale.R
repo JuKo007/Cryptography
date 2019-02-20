@@ -26,7 +26,7 @@ scytale <- function(Msg,rows = 6, method = "encrypt"){
   Split <- unlist(strsplit(tolower(Msg),""))
   
   # checking how many characters there are in the splitted message
-  SplitLength <- length(Split)
+  
   
   # checking if number of rows is shorter or equal to number of characters in the message
   if(rows > SplitLength){
@@ -64,7 +64,7 @@ scytale <- function(Msg,rows = 6, method = "encrypt"){
     }
     library(R.utils)
     
-    # computing how many NAs were inserted into hte original message
+    # computing how many NAs were inserted into the original message
     NumberOfNAs <- (rows*MatCols) - SplitLength
     
     # assigning string to a new vector for inserting NAs in for loop
@@ -73,8 +73,8 @@ scytale <- function(Msg,rows = 6, method = "encrypt"){
     if(NumberOfNAs != 0){
       
       # computing the positions of the NAs in the original message
-      RowsWithNAs <- tail(c(1:rows),NumberOfNAs)
-      NAPositionsInString <- RowsWithNAs * MatCols
+      ColumnsWithNAs <- tail(c(1:rows),NumberOfNAs)
+      NAPositionsInString <- ColumnsWithNAs * MatCols
       
       # inserting NAs at right positions
       for(i in 1:NumberOfNAs){
@@ -87,7 +87,7 @@ scytale <- function(Msg,rows = 6, method = "encrypt"){
     # removing the NAs that we have too much
     Split3 <- Split2[1:(length(Split2)-NumberOfNAs)]
     
-    # putting the message with reinserted Nas at the right spots into a matrix
+    # putting the message with reinserted NAs at the right spots into a matrix
     DecMat <- matrix(Split3, nrow = rows, ncol = MatCols, byrow = TRUE)
     
     # pasting everything back together
